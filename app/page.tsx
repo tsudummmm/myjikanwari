@@ -603,7 +603,7 @@ export default function Home() {
   // 4-9. レンダリング (Render)
   // ---------------------------------------------------------
   return (
-    <main className={`p-4 w-[448px] min-w-[448px] max-w-[448px] mx-auto min-h-screen border-x transition-colors duration-300 ${containerStyle}`} style={{ scrollbarGutter: 'stable' }}>
+    <main className={`p-4 w-full max-w-[448px] mx-auto min-h-screen border-x transition-colors duration-300 ${containerStyle}`}>
       <audio ref={audioRef} src="Japanese_School_Bell02-02(Slow-Mid).mp3" preload="auto" />
 
       {/* ふんわり通知 */}

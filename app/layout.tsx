@@ -12,10 +12,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ★ここを書き換えました
+// ★ ここで「アイコンはこれだよ！」とiPhoneに直接教えています
 export const metadata: Metadata = {
   title: "時間割",
   description: "自分だけの1日時間割アプリ",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png", // iPhone（Apple）用の設定を追加
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="ja" // ★ここを日本語設定(ja)に変えました
+      lang="ja"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

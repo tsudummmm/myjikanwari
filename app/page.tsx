@@ -429,7 +429,7 @@ export default function Home() {
             <div id="timer" class="${timerEnabled ? '' : 'off-mode'}">${initialTimer}</div>
           </div>
           <div class="controls">
-            <button id="theme-toggle">表示切替</button>
+            <button id="theme-toggle">☀️↔🌙</button>
             <button onclick="window.close();">戻る</button>
           </div>
           <script>
@@ -774,7 +774,7 @@ export default function Home() {
       {/* トップヘッダー */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-2">
-            <h1 className="font-black text-2xl tracking-tighter">スケジュール</h1>
+            <h1 className="font-black text-2xl tracking-tighter">my時間割</h1>
             <div className="relative">
               {/* 【修正】音量ボタンのUI変更。スマホならOFF/ON、PCならOFF/VOL数値 */}
               <button 
@@ -885,7 +885,7 @@ export default function Home() {
           <form onSubmit={confirmRename} className={`w-full max-w-[400px] rounded-3xl p-6 shadow-2xl transition-colors ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
             <h2 className="font-black text-xl mb-4 uppercase tracking-tighter">タブ名を変更</h2>
             <input value={tempTabName} onFocus={(e)=>e.target.select()} onChange={(e)=>setTempTabName(e.target.value)} className={`w-full border-4 rounded-2xl p-3 font-black text-lg mb-1 outline-none focus:border-blue-500 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-gray-50 border-gray-100 text-gray-900'}`} autoFocus />
-            <p className={`text-[10px] font-bold mb-4 ml-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>※「サンプル」で例を表示できます</p>
+            <p className={`text-[10px] font-bold mb-4 ml-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>※「サンプル」でスケジュール例を表示できます</p>
             <div className="flex gap-2">
               <button type="button" onClick={()=>setIsRenameModalOpen(false)} className={`flex-1 py-3 rounded-xl font-bold ${theme === 'dark' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-700'}`}>キャンセル</button>
               <button type="submit" className="flex-2 py-3 bg-blue-600 text-white rounded-xl font-black">変更を保存</button>

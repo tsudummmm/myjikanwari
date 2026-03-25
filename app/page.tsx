@@ -372,19 +372,23 @@ export default function Home() {
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (popupRef.current && !popupRef.current.closed) {
       popupRef.current.postMessage({
         type: "UPDATE_TIMER",
         taskName: calculations.current?.task || "No Task",
-        timerText: timerText,
+        // 文字列だけでなく、計算用の生データ（秒数や開始・終了時刻）を送るように変更
+        remainingSec: remainingSec, 
+        startTime: calculations.current?.start || "",
+        endTime: calculations.current?.end || "",
         isWaiting: !calculations.current,
         timerEnabled: timerEnabled
       }, "*");
     }
-  }, [calculations.current, timerText, timerEnabled]);
+    // 監視対象に remainingSec を追加して、1秒ごとの変化を確実に伝えます
+  }, [calculations.current, remainingSec, timerEnabled]);
 
-  const openTimerPopup = () => {
+ const openTimerPopup = () => {
     if (popupRef.current && !popupRef.current.closed) { popupRef.current.focus(); return; }
     
     const savedGeo = localStorage.getItem(GEO_KEY);
@@ -396,7 +400,6 @@ export default function Home() {
     popupRef.current = popup;
 
     const initialTask = calculations.current?.task || "No Task";
-    const initialTimer = timerText;
 
     popup.document.write(`
       <html>
@@ -423,63 +426,95 @@ export default function Home() {
             .light-mode button { background: rgba(243, 244, 246, 0.9); color: #374151; border: 1px solid #d1d5db; }
           </style>
         </head>
-        <body class="${g.isDark ? '' : 'light-mode'}">
+        <body class="\${g.isDark ? '' : 'light-mode'}">
           <div id="container">
-            <div id="task">${initialTask}</div>
-            <div id="timer" class="${timerEnabled ? '' : 'off-mode'}">${initialTimer}</div>
+            <div id="task">\${initialTask}</div>
+            <div id="timer" class="\${timerEnabled ? '' : 'off-mode'}">--:--:--</div>
           </div>
           <div class="controls">
-            <button id="theme-toggle">☀️↔🌙</button>
+            <button id="theme-toggle">\${g.isDark ? '☀️' : '🌙'}</button>
             <button onclick="window.close();">戻る</button>
           </div>
           <script>
-            let isDark = ${g.isDark};
+            let isDark = \${g.isDark};
+            let localRemainingSec = 0;
+            let timerInterval = null;
+            let currentTimerEnabled = \${timerEnabled};
+            let currentStartTime = "";
+            let currentEndTime = "";
+
             const body = document.body;
             const toggle = document.getElementById('theme-toggle');
-            
+            const timerEl = document.getElementById('timer');
+
+            // 秒数を HH:mm:ss 形式に変換する関数
+            const formatTime = (totalSec) => {
+              if (totalSec < 0) totalSec = 0;
+              const h = Math.floor(totalSec / 3600);
+              const m = Math.floor(totalSec / 60) % 60;
+              const s = totalSec % 60;
+              return \`\${h}:\${m.toString().padStart(2, '0')}:\${s.toString().padStart(2, '0')}\`;
+            };
+
+            // 表示を更新する関数
+            const updateDisplay = () => {
+              if (currentTimerEnabled) {
+                timerEl.innerText = formatTime(localRemainingSec);
+              } else {
+                timerEl.innerText = currentStartTime + " 〜 " + currentEndTime;
+              }
+            };
+
+            // 1秒ごとにカウントダウンを実行する（スマホの遅延対策）
+            setInterval(() => {
+              if (localRemainingSec > 0 && currentTimerEnabled) {
+                localRemainingSec--;
+                updateDisplay();
+              }
+            }, 1000);
+
             const reportGeo = () => {
               const geo = {
                 type: 'POPUP_GEOMETRY_UPDATE',
-                x: window.screenX,
-                y: window.screenY,
-                width: window.outerWidth,
-                height: window.outerHeight,
+                x: window.screenX, y: window.screenY,
+                width: window.outerWidth, height: window.outerHeight,
                 isDark: isDark
               };
-              if (window.opener && !window.opener.closed) {
-                window.opener.postMessage(geo, '*');
-              }
+              if (window.opener && !window.opener.closed) { window.opener.postMessage(geo, '*'); }
               localStorage.setItem('${GEO_KEY}', JSON.stringify(geo));
             };
-
-            let lastX = window.screenX, lastY = window.screenY, lastW = window.outerWidth, lastH = window.outerHeight;
-            setInterval(() => {
-              if (lastX !== window.screenX || lastY !== window.screenY || lastW !== window.outerWidth || lastH !== window.outerHeight) {
-                lastX = window.screenX; lastY = window.screenY; lastW = window.outerWidth; lastH = window.outerHeight;
-                reportGeo();
-              }
-            }, 500);
 
             toggle.addEventListener('click', () => { 
               isDark = !isDark; 
               body.classList.toggle('light-mode', !isDark); 
+              // ボタンのアイコンをメイン画面と同じ仕組み（交互に表示）に変更
+              toggle.innerText = isDark ? '☀️' : '🌙';
               reportGeo(); 
             });
 
             window.addEventListener('message', (e) => {
               if (e.data.type === 'UPDATE_TIMER') {
                 document.getElementById('task').innerText = e.data.isWaiting ? 'Waiting...' : e.data.taskName;
-                const t = document.getElementById('timer');
-                t.innerText = e.data.timerText;
-                t.classList.toggle('off-mode', !e.data.timerEnabled);
+                
+                // メイン画面から届いた最新の秒数で同期（ここでズレを補正）
+                localRemainingSec = e.data.remainingSec;
+                currentTimerEnabled = e.data.timerEnabled;
+                currentStartTime = e.data.startTime;
+                currentEndTime = e.data.endTime;
+
+                timerEl.classList.toggle('off-mode', !currentTimerEnabled);
+                updateDisplay();
+                
                 if (!e.data.isWaiting) {
-                   t.style.color = e.data.timerEnabled ? (isDark ? '#3b82f6' : '#2563eb') : (isDark ? '#60a5fa' : '#3b82f6');
+                  timerEl.style.color = currentTimerEnabled ? (isDark ? '#3b82f6' : '#2563eb') : (isDark ? '#60a5fa' : '#3b82f6');
                 } else {
-                   t.style.color = '#4b5563';
+                  timerEl.style.color = '#4b5563';
                 }
               }
             });
-            window.addEventListener('beforeunload', reportGeo);
+            
+            // 初回表示
+            updateDisplay();
           </script>
         </body>
       </html>
